@@ -1,75 +1,62 @@
-import React, { useState, useEffect } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { ChartTooltipContent } from './ui/chart-tooltip';
+import React, { useState, useEffect } from "react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import ChartTooltipContent from "../ui/chart-tooltip";
 
 const CommitActivityChart = ({ repository }) => {
   const [commitData, setCommitData] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  const generateMockCommitData = () => {
-    const data = [];
-    const now = new Date();
-
-    for (let i = 11; i >= 0; i--) {
-      const date = new Date(now);
-      date.setMonth(date.getMonth() - i);
-
-      data.push({
-        month: date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
-        commits: Math.floor(Math.random() * 100) + 20,
-        date: date.toISOString(),
-      });
-    }
-
-    return data;
-  };
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setCommitData(generateMockCommitData());
-      setLoading(false);
-    }, 1000);
-
-    return () => clearTimeout(timer);
+    const data = [];
+    const now = new Date();
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now);
+      d.setMonth(d.getMonth() - i);
+      data.push({
+        month: d.toLocaleDateString("en-US", { month: "short" }),
+        commits: Math.floor(Math.random() * 100) + 20,
+      });
+    }
+    setCommitData(data);
   }, [repository]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
   return (
-    <div className="h-64">
+    <div className="h-64 w-full">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={commitData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
-          <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-          <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+        <LineChart data={commitData}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#ccc" />
+          <XAxis dataKey="month" />
+          <YAxis />
           <Tooltip
-            content={({ active, payload, label }) => (
-              <ChartTooltipContent
-                active={active}
-                payload={payload?.map(p => ({
-                  dataKey: p.dataKey?.toString() || '',
-                  name: 'Commits',
-                  value: `${p.value} commits`,
-                  color: p.color || '',
-                  payload: p.payload
-                }))}
-                label={label?.toString()}
-              />
-            )}
+            content={({ active, payload, label }) =>
+              active && payload ? (
+                <ChartTooltipContent
+                  active={active}
+                  payload={payload.map((p) => ({
+                    name: "Commits",
+                    value: p.value,
+                    color: p.color || "#4f46e5",
+                    payload: p.payload,
+                  }))}
+                  label={label}
+                />
+              ) : null
+            }
           />
           <Line
             type="monotone"
             dataKey="commits"
-            stroke="hsl(var(--primary))"
+            stroke="#4f46e5"
             strokeWidth={3}
-            dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 4 }}
-            activeDot={{ r: 6, stroke: 'hsl(var(--primary))', strokeWidth: 2 }}
+            dot={{ r: 4 }}
+            activeDot={{ r: 6 }}
           />
         </LineChart>
       </ResponsiveContainer>
@@ -77,4 +64,4 @@ const CommitActivityChart = ({ repository }) => {
   );
 };
 
-export { CommitActivityChart };
+export default CommitActivityChart;

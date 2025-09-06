@@ -1,4 +1,5 @@
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import React from "react";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 
 const ChartTooltipContent = ({ active, payload }) => {
   if (!active || !payload) return null;
@@ -6,32 +7,25 @@ const ChartTooltipContent = ({ active, payload }) => {
   return (
     <div className="bg-white border p-2 rounded shadow-sm">
       {payload.map((p, index) => (
-        <p key={index} style={{ color: p.color || 'black' }}>
+        <p key={index} style={{ color: p.color || "black" }}>
           {p.name}: {p.payload ? `${p.payload.percentage}% (${(p.payload.value / 1024).toFixed(1)}KB)` : p.value}
         </p>
       ))}
     </div>
   );
 };
-
 const COLORS = [
-  'hsl(var(--primary))',
-  'hsl(var(--accent))',
-  'hsl(var(--success))',
-  'hsl(var(--warning))',
-  'hsl(var(--destructive))',
-  'hsl(var(--secondary))',
-  'hsl(var(--muted))',
+  "#6366F1","#EC4899","#22C55E","#FACC15","#EF4444","#64748B","#9CA3AF",
 ];
 
-export const LanguageChart = ({ languages }) => {
+const LanguageChart = ({ languages }) => {
   const totalBytes = Object.values(languages).reduce((sum, bytes) => sum + bytes, 0);
-  
+
   const data = Object.entries(languages)
     .map(([name, bytes]) => ({
       name,
       value: bytes,
-      percentage: ((bytes / totalBytes) * 100).toFixed(1)
+      percentage: ((bytes / totalBytes) * 100).toFixed(1),
     }))
     .sort((a, b) => b.value - a.value)
     .slice(0, 7); 
@@ -61,8 +55,8 @@ export const LanguageChart = ({ languages }) => {
               <Cell
                 key={`cell-${index}`}
                 fill={COLORS[index % COLORS.length]}
-                stroke="hsl(var(--background))"
-                strokeWidth={2}
+                stroke="#ffffff"
+                strokeWidth={1}
               />
             ))}
           </Pie>
@@ -81,3 +75,5 @@ export const LanguageChart = ({ languages }) => {
     </div>
   );
 };
+
+export default LanguageChart;

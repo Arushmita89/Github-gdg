@@ -21,6 +21,4 @@ class GitHubService {
   }
 }
 
-const githubService = new GitHubService();
-
-export default githubService;
+export default new GitHubService();
