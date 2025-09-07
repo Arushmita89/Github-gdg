@@ -1,8 +1,6 @@
 import React, { useState } from "react";
 import RepositoryDashboard from "./RepositoryDashboard";
 
-//const GITHUB_PAT = "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"; // Replace with your PAT
-
 const GitHubInputForm = () => {
   const [input, setInput] = useState("");
   const [repository, setRepository] = useState(null);
