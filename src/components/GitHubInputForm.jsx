@@ -1,77 +1,84 @@
 import React, { useState } from "react";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "./ui/card";
-import { Github } from "lucide-react";
-import Input from "./ui/input";
-import Button from "./ui/button";
-import github from "../services/github"; 
+import RepositoryDashboard from "./RepositoryDashboard";
 
-function GitHubInputForm({ onSubmit, loading }) {
-  const [owner, setOwner] = useState("");
-  const [repo, setRepo] = useState("");
+const GITHUB_PAT = "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"; // Replace with your PAT
+
+const GitHubInputForm = () => {
+  const [input, setInput] = useState("");
+  const [repository, setRepository] = useState(null);
+  const [languages, setLanguages] = useState({});
+  const [commitData, setCommitData] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!owner.trim() || !repo.trim()) return;
+    if (!input) return;
+    setLoading(true);
 
     try {
-      const repoData = await github.getRepository(owner, repo);
-      const languagesData = await github.getRepositoryLanguages(owner, repo);
-      const contributorsData = await github.getContributors(owner, repo);
+      const repoRes = await fetch(`https://api.github.com/repos/${input}`, {
+        headers: { Authorization: `token ${GITHUB_PAT}` },
+      });
+      if (!repoRes.ok) throw new Error("Repository not found or unauthorized");
+      const repoData = await repoRes.json();
+      setRepository(repoData);
 
-      onSubmit({ repoData, languagesData, contributorsData });
-    } catch (error) {
-      console.error("Error fetching repository:", error);
-      alert("Failed to fetch repository. Check console for details.");
+      const langRes = await fetch(repoData.languages_url, {
+        headers: { Authorization: `token ${GITHUB_PAT}` },
+      });
+      const langData = await langRes.json();
+      setLanguages(langData);
+
+      const commitRes = await fetch(
+        `https://api.github.com/repos/${input}/stats/commit_activity`,
+        { headers: { Authorization: `token ${GITHUB_PAT}` } }
+      );
+      let commitActivity = await commitRes.json();
+      if (!Array.isArray(commitActivity)) commitActivity = [];
+
+      const formattedCommits = commitActivity.map((week, idx) => ({
+        week: `Week ${idx + 1}`,
+        commits: week.total,
+        dateRange: `${new Date(week.week * 1000).toLocaleDateString()}`, // GitHub returns `week` as timestamp in seconds
+      }));
+
+      setCommitData(formattedCommits);
+    } catch (err) {
+      console.error("Error fetching repository:", err);
+      setRepository(null);
+      setLanguages({});
+      setCommitData([]);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <Card className="max-w-md mx-auto mt-8 bg-white dark:bg-gray-800 text-black dark:text-white shadow-lg">
-      {/* Card Header */}
-      <CardHeader className="text-center space-y-4">
-        <div className="flex justify-center">
-          <div className="p-4 rounded-full bg-gradient-to-r from-blue-500 to-blue-700 shadow-lg">
-            <Github className="h-8 w-8 text-white" />
-          </div>
-        </div>
-        <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-500 to-blue-400 bg-clip-text text-transparent">
-          GitHub Repository Analyzer
-        </CardTitle>
-        <CardDescription className="text-lg text-muted-foreground">
-          Get AI-powered insights and comprehensive analysis of any GitHub repository
-        </CardDescription>
-      </CardHeader>
-
-      {/* Card Content with Form */}
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Input
-            placeholder="Repository Owner"
-            value={owner}
-            onChange={(e) => setOwner(e.target.value)}
-            required
-            className="bg-gray-100 dark:bg-gray-700 text-black dark:text-white border border-gray-300 dark:border-gray-600"
+    <div className="flex flex-col items-center gap-4">
+      {!repository ? (
+        <form onSubmit={handleSubmit} className="flex flex-col items-center gap-4">
+          <input
+            type="text"
+            placeholder="owner/repository"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            className="border p-2 rounded w-64 text-black"
           />
-          <Input
-            placeholder="Repository Name"
-            value={repo}
-            onChange={(e) => setRepo(e.target.value)}
-            required
-            className="bg-gray-100 dark:bg-gray-700 text-black dark:text-white border border-gray-300 dark:border-gray-600"
-          />
-          <Button
-            type="submit"
-            variant="primary"
-            size="md"
-            disabled={loading}
-            className="w-full bg-blue-600 dark:bg-blue-500 text-white hover:bg-blue-700 dark:hover:bg-blue-600"
-          >
-            {loading ? "Analyzing..." : "Analyze Repository"}
-          </Button>
+          <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded">
+            Fetch Repository
+          </button>
         </form>
-      </CardContent>
-    </Card>
+      ) : (
+        <RepositoryDashboard
+          repository={repository}
+          languages={languages}
+          commitData={commitData}
+          loading={loading}
+          onBack={() => setRepository(null)}
+        />
+      )}
+    </div>
   );
-}
+};
 
 export default GitHubInputForm;

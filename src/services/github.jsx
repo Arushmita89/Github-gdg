@@ -16,7 +16,16 @@ class GitHubService {
   }
 
   async getContributors(owner, repo) {
-    const response = await this.octokit.rest.repos.listContributors({ owner, repo, per_page: 10 });
+    const response = await this.octokit.rest.repos.listContributors({
+      owner,
+      repo,
+      per_page: 10,
+    });
+    return response.data;
+  }
+
+  async getCommitActivity(owner, repo) {
+    const response = await this.octokit.rest.repos.getCommitActivityStats({ owner, repo });
     return response.data;
   }
 }

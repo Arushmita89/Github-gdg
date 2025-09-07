@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader } from "../components/ui/card";
 const LoadingSkeleton = () => {
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Header Skeleton */}
+      {/*Header*/}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="space-y-2">
           <div className="flex items-center gap-3">
@@ -22,7 +22,7 @@ const LoadingSkeleton = () => {
         </div>
       </div>
 
-      {/* Statistics Cards Skeleton */}
+      {/*Statistics Cards Skeleton*/}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {Array.from({ length: 4 }, (_, i) => (
           <Card key={i} className="card-glow">
@@ -39,7 +39,7 @@ const LoadingSkeleton = () => {
         ))}
       </div>
 
-      {/* Charts Skeleton */}
+      {/*Charts Skeleton*/}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {Array.from({ length: 2 }, (_, i) => (
           <Card key={i} className="card-elevated">
@@ -54,7 +54,7 @@ const LoadingSkeleton = () => {
         ))}
       </div>
 
-      {/* Repository Info Skeleton */}
+      {/*Repository Info Skeleton*/}
       <Card className="card-glow">
         <CardHeader>
           <div className="skeleton h-6 w-48 rounded"></div>

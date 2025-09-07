@@ -39,7 +39,7 @@ function Index() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-black dark:text-white">
-      {/* Theme Toggle */}
+      {/*Toggle*/}
       <div className="fixed top-4 right-4 z-50">
         <ThemeToggle />
       </div>
