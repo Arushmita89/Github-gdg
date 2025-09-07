@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import RepositoryDashboard from "./RepositoryDashboard";
 
-const GITHUB_PAT = "token"; //replace with pat
+const GITHUB_PAT = "YOUR_TOKEN_HERE"; // safe placeholder
 
 const GitHubInputForm = () => {
   const [input, setInput] = useState("");
