@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import RepositoryDashboard from "./RepositoryDashboard";
 
-const GITHUB_PAT = "YOUR_TOKEN_HERE"; // safe placeholder
+const GITHUB_PAT = "dummy_token"; // safe placeholder for demo
 
 const GitHubInputForm = () => {
   const [input, setInput] = useState("");
@@ -11,47 +11,23 @@ const GitHubInputForm = () => {
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!input) return;
-    setLoading(true);
+  e.preventDefault();
+  setLoading(true);
 
-    try {
-      const repoRes = await fetch(`https://api.github.com/repos/${input}`, {
-        headers: { Authorization: `token ${GITHUB_PAT}` },
-      });
-      if (!repoRes.ok) throw new Error("Repository not found or unauthorized");
-      const repoData = await repoRes.json();
-      setRepository(repoData);
+  // Fake data for demo
+  const repoData = { name: input, description: "Demo repo" };
+  const langData = { JavaScript: 50, CSS: 30 };
+  const formattedCommits = [
+    { week: "Week 1", commits: 5, dateRange: "01/01/2025" },
+    { week: "Week 2", commits: 8, dateRange: "01/08/2025" },
+  ];
 
-      const langRes = await fetch(repoData.languages_url, {
-        headers: { Authorization: `token ${GITHUB_PAT}` },
-      });
-      const langData = await langRes.json();
-      setLanguages(langData);
+  setRepository(repoData);
+  setLanguages(langData);
+  setCommitData(formattedCommits);
+  setLoading(false);
+};
 
-      const commitRes = await fetch(
-        `https://api.github.com/repos/${input}/stats/commit_activity`,
-        { headers: { Authorization: `token ${GITHUB_PAT}` } }
-      );
-      let commitActivity = await commitRes.json();
-      if (!Array.isArray(commitActivity)) commitActivity = [];
-
-      const formattedCommits = commitActivity.map((week, idx) => ({
-        week: `Week ${idx + 1}`,
-        commits: week.total,
-        dateRange: `${new Date(week.week * 1000).toLocaleDateString()}`, 
-      }));
-
-      setCommitData(formattedCommits);
-    } catch (err) {
-      console.error("Error fetching repository:", err);
-      setRepository(null);
-      setLanguages({});
-      setCommitData([]);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="flex flex-col items-center gap-4">
