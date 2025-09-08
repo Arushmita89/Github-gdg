@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import RepositoryDashboard from "./RepositoryDashboard";
-const GITHUB_PAT = import.meta.env.VITE_GITHUB_PAT;
+
 const GitHubInputForm = () => {
   const [input, setInput] = useState("");
   const [repository, setRepository] = useState(null);
   const [languages, setLanguages] = useState({});
   const [commitData, setCommitData] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [readme, setReadme] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -15,25 +15,16 @@ const GitHubInputForm = () => {
     setLoading(true);
 
     try {
-      const repoRes = await fetch(`https://api.github.com/repos/${input}`, {
-        headers: { Authorization: `Bearer ${GITHUB_PAT}` },
+      const res = await fetch("http://localhost:5174/api/github/repo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ repo: input }),
       });
-      if (!repoRes.ok) throw new Error("Repository not found or unauthorized");
-      const repoData = await repoRes.json();
-      setRepository(repoData);
+      if (!res.ok) throw new Error("Repo not found or unauthorized");
+      const { repoData, languages, commitActivity, readme } = await res.json();
 
-      const langRes = await fetch(repoData.languages_url, {
-        headers: { Authorization: `token ${GITHUB_PAT}` },
-      });
-      const langData = await langRes.json();
-      setLanguages(langData);
-
-      const commitRes = await fetch(
-        `https://api.github.com/repos/${input}/stats/commit_activity`,
-        { headers: { Authorization: `token ${GITHUB_PAT}` } }
-      );
-      let commitActivity = await commitRes.json();
-      if (!Array.isArray(commitActivity)) commitActivity = [];
+      setRepository({ ...repoData, readme });
+      setLanguages(languages);
 
       const formattedCommits = commitActivity.map((week, idx) => ({
         week: `Week ${idx + 1}`,
@@ -41,13 +32,6 @@ const GitHubInputForm = () => {
         dateRange: `${new Date(week.week * 1000).toLocaleDateString()}`,
       }));
       setCommitData(formattedCommits);
-
-      const readmeRes = await fetch(
-        `https://api.github.com/repos/${input}/readme`,
-        { headers: { Authorization: `token ${GITHUB_PAT}`, Accept: "application/vnd.github.v3.raw" } }
-      );
-      const readmeText = await readmeRes.text();
-      setReadme(readmeText || "");
     } catch (err) {
       console.error("Error fetching repository:", err);
       setRepository(null);
@@ -76,7 +60,7 @@ const GitHubInputForm = () => {
         </form>
       ) : (
         <RepositoryDashboard
-          repository={{ ...repository, readme }}
+          repository={repository}
           languages={languages}
           commitData={commitData}
           loading={loading}

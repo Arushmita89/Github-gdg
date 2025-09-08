@@ -7,8 +7,8 @@ dotenv.config();
 const app = express();
 app.use(cors());
 app.use(express.json());
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const insightsCache = new Map();
 
 const withTimeout = (promise, ms) =>
@@ -33,9 +33,7 @@ const generateWithRetries = async (model, prompt, retries = 3, delay = 3000) => 
 
 const cleanAIOutput = (raw) => {
   let cleaned = raw.replace(/```json|```/g, "").trim();
-  cleaned = cleaned.replace(/,\s*}/g, "}");
-  cleaned = cleaned.replace(/,\s*$/g, "");
-
+  cleaned = cleaned.replace(/,\s*}/g, "}").replace(/,\s*$/g, "");
   try {
     const parsed = JSON.parse(cleaned);
     return {
@@ -48,14 +46,50 @@ const cleanAIOutput = (raw) => {
   }
 };
 
+app.post("/api/github/repo", async (req, res) => {
+  const { repo } = req.body;
+  if (!repo) return res.status(400).json({ error: "Missing repo name" });
+
+  const GITHUB_PAT = process.env.VITE_GITHUB_PAT;
+
+  try {
+    const repoRes = await fetch(`https://api.github.com/repos/${repo}`, {
+      headers: { Authorization: `token ${GITHUB_PAT}` },
+    });
+    if (!repoRes.ok) throw new Error("Repository not found or unauthorized");
+    const repoData = await repoRes.json();
+
+    const langRes = await fetch(repoData.languages_url, {
+      headers: { Authorization: `token ${GITHUB_PAT}` },
+    });
+    const languages = await langRes.json();
+
+    const commitRes = await fetch(
+      `https://api.github.com/repos/${repo}/stats/commit_activity`,
+      { headers: { Authorization: `token ${GITHUB_PAT}` } }
+    );
+    let commitActivity = await commitRes.json();
+    if (!Array.isArray(commitActivity)) commitActivity = [];
+
+    const readmeRes = await fetch(
+      `https://api.github.com/repos/${repo}/readme`,
+      { headers: { Authorization: `token ${GITHUB_PAT}`, Accept: "application/vnd.github.v3.raw" } }
+    );
+    const readme = await readmeRes.text();
+
+    res.json({ repoData, languages, commitActivity, readme });
+  } catch (err) {
+    console.error("GitHub API error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post("/api/insights", async (req, res) => {
   const { repoData } = req.body;
   if (!repoData) return res.status(400).json({ error: "Missing repo data" });
 
   const cacheKey = repoData.full_name;
-  if (insightsCache.has(cacheKey)) {
-    return res.json({ insights: insightsCache.get(cacheKey) });
-  }
+  if (insightsCache.has(cacheKey)) return res.json({ insights: insightsCache.get(cacheKey) });
 
   const prompt = `
 You are analyzing a GitHub repository. Output a JSON object with exactly three fields:
