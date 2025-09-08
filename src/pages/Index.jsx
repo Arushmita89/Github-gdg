@@ -17,7 +17,7 @@ function Index() {
       setLanguages(languagesData);
 
       toast({
-        title: "Repository Analyzed! 🎉",
+        title: "Repository Analyzed!",
         description: `Successfully fetched ${repoData.full_name}`,
       });
     } catch (error) {
@@ -38,13 +38,16 @@ function Index() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-black dark:text-white">
-      {/*Toggle*/}
+    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 text-black dark:text-white">
+      <header className="bg-blue-600 dark:bg-blue-800 text-white py-4 shadow-md">
+        <h1 className="text-center text-2xl font-bold">GitHub Repo Analyser</h1>
+      </header>
+
       <div className="fixed top-4 right-4 z-50">
         <ThemeToggle />
       </div>
 
-      <div className="container mx-auto px-4 py-8 relative z-10">
+      <main className="flex-grow container mx-auto px-4 py-8 relative z-10">
         {!repositoryData ? (
           <div className="flex flex-col items-center justify-center min-h-[80vh] space-y-8">
             <GitHubInputForm onSubmit={handleRepositorySubmit} loading={loading} />
@@ -61,7 +64,12 @@ function Index() {
             onBack={handleBack}
           />
         )}
-      </div>
+      </main>
+
+      {/*Footer*/}
+      <footer className="bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 py-4 mt-auto text-center text-sm">
+        &copy; {new Date().getFullYear()} GitHub Repo Analyser. Built by Arushmita.
+      </footer>
     </div>
   );
 }
