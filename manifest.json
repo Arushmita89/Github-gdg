@@ -3,7 +3,7 @@
   "name": "GitHub AI Insights Analyzer",
   "icons": [
     {
-      "src": "/icons/icon-192.png",
+      "src": "public/image.png",
       "sizes": "192x192",
       "type": "image/png"
     },
