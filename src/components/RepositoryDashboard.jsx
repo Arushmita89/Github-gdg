@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Card,
   CardContent,
@@ -10,11 +10,21 @@ import Button from "./ui/button";
 import { Star, GitFork, AlertCircle, Calendar, Code, Shield } from "lucide-react";
 import LanguageChart from "./charts/LanguageChart";
 import CommitActivityChart from "./charts/CommitActivityChart";
+import AIInsights from "./AIInsights";
 import { useTheme } from "./theme-provider";
 
-const RepositoryDashboard = ({ repository, languages = {}, commitData = [], loading = false, onBack }) => {
+const RepositoryDashboard = ({
+  repository,
+  languages = {},
+  commitData = [],
+  loading = false,
+  onBack,
+}) => {
   const { theme } = useTheme();
   const cardBg = theme === "dark" ? "bg-gray-800 text-white" : "bg-white text-black";
+
+  const [contributors, setContributors] = useState([]);
+  const [readme, setReadme] = useState("");
 
   const formatNumber = (num) => {
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
@@ -22,8 +32,43 @@ const RepositoryDashboard = ({ repository, languages = {}, commitData = [], load
     return num.toString();
   };
 
+  useEffect(() => {
+    if (!repository) return;
+
+    const fetchExtraData = async () => {
+      try {
+        const contribRes = await fetch(
+          `https://api.github.com/repos/${repository.full_name}/contributors?per_page=10`,
+          { headers: { Authorization: `Bearer ${import.meta.env.VITE_GITHUB_PAT}` } }
+        );
+        const contribData = await contribRes.json();
+        setContributors(Array.isArray(contribData) ? contribData : []);
+
+        const readmeRes = await fetch(
+          `https://api.github.com/repos/${repository.full_name}/readme`,
+          {
+            headers: {
+              Authorization: `Bearer ${import.meta.env.VITE_GITHUB_PAT}`,
+              Accept: "application/vnd.github.v3.raw",
+            },
+          }
+        );
+        const readmeText = await readmeRes.text();
+        setReadme(readmeText || "");
+      } catch (err) {
+        console.error("Error fetching extra repo data:", err);
+      }
+    };
+
+    fetchExtraData();
+  }, [repository]);
+
   return (
-    <div className={`space-y-6 animate-fade-in ${theme === "dark" ? "bg-gray-900 text-white" : "bg-gray-50 text-black"}`}>
+    <div
+      className={`space-y-6 animate-fade-in ${
+        theme === "dark" ? "bg-gray-900 text-white" : "bg-gray-50 text-black"
+      }`}
+    >
       {/*Header*/}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="space-y-2">
@@ -49,21 +94,25 @@ const RepositoryDashboard = ({ repository, languages = {}, commitData = [], load
             </div>
           </div>
           {repository.description && (
-            <p className="text-muted-foreground text-lg max-w-2xl">{repository.description}</p>
+            <p className="text-muted-foreground text-lg max-w-2xl">
+              {repository.description}
+            </p>
           )}
         </div>
 
         <div className="flex gap-2">
-          <Button onClick={onBack} variant="outline">← Back</Button>
-          <Button asChild variant="hero">
-            <a href={repository.html_url} target="_blank" rel="noopener noreferrer">
+          <Button onClick={onBack} variant="outline" className="border border-neutral-600 rounded-md">
+            ← Back
+          </Button>
+          <Button asChild variant="hero" className="border border-neutral-600 rounded-md">
+            <a href={repository.html_url} target="_blank" rel="noopener noreferrer" >
               View on GitHub
             </a>
           </Button>
         </div>
       </div>
 
-      {/*Core Stats*/}
+      {/*Stats*/}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className={`card-glow ${cardBg}`}>
           <CardContent className="flex flex-row items-center justify-center h-32 space-x-2">
@@ -99,7 +148,9 @@ const RepositoryDashboard = ({ repository, languages = {}, commitData = [], load
           <CardContent className="flex flex-row items-center justify-center h-32 space-x-2">
             <Shield className="h-5 w-5 text-success" />
             <div className="flex flex-col justify-center">
-              <p className="text-lg font-bold truncate">{repository.license?.name || "No License"}</p>
+              <p className="text-lg font-bold truncate">
+                {repository.license?.name || "No License"}
+              </p>
               <p className="text-sm text-muted-foreground">License</p>
             </div>
           </CardContent>
@@ -114,7 +165,9 @@ const RepositoryDashboard = ({ repository, languages = {}, commitData = [], load
               <Code className="h-5 w-5" />
               Language Composition
             </CardTitle>
-            <CardDescription>Distribution of programming languages in this repository</CardDescription>
+            <CardDescription>
+              Distribution of programming languages in this repository
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <LanguageChart languages={languages} />
@@ -133,9 +186,22 @@ const RepositoryDashboard = ({ repository, languages = {}, commitData = [], load
             <CommitActivityChart commitData={commitData} loading={loading} />
           </CardContent>
         </Card>
-        </div>
       </div>
-      );
+
+      {/*AI Insights*/}
+      <div className="mt-6">
+        <AIInsights
+          repoData={{
+            ...repository,
+            readme,
+            languages,
+            contributors,
+            commitData,
+          }}
+        />
+      </div>
+    </div>
+  );
 };
 
-      export default RepositoryDashboard;
+export default RepositoryDashboard;

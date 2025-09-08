@@ -1,110 +1,88 @@
-import React, { useEffect, useState } from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
-import Button from "../ui/button";
+import React, { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Loader2, AlertTriangle } from "lucide-react";
 
-const AIInsights = ({ repository, languages = {}, contributors = [], commitData = [] }) => {
-  const [insights, setInsights] = useState({
-    repoSummary: "",
-    languageAnalysis: "",
-    contributionPatterns: "",
-  });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+export default function AIInsights({ repoData }) {
+  const [insights, setInsights] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const fetchAIInsights = async (repo, langs, contribs, commits) => {
-    const prompt = `
-      Repository Description: ${repo.description || "N/A"}
-      README Content: ${repo.readme || "N/A"}
-      Languages: ${JSON.stringify(langs)}
-      Contributors: ${JSON.stringify(contribs)}
-      Commit Data (weekly): ${JSON.stringify(commits)}
+  const fetchInsights = async () => {
+    setLoading(true);
+    setError("");
 
-      Generate:
-      1. AI Repository Summary
-      2. AI Language Analysis
-      3. AI Contribution Patterns
-    `;
-    const response = await fetch("/api/generate-insights", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt }),
-    });
+    try {
+      const res = await fetch("http://localhost:5174/api/insights", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ repoData }),
+      });
 
-    const data = await response.json();
-    return {
-      repoSummary: data.repoSummary || "No summary available",
-      languageAnalysis: data.languageAnalysis || "No language analysis available",
-      contributionPatterns: data.contributionPatterns || "No contribution insights available",
-    };
+      if (!res.ok) throw new Error("Failed to fetch insights");
+
+      const data = await res.json();
+      setInsights(data.insights);
+    } catch (err) {
+      console.error(err);
+      setError("Unable to load insights. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => {
-    if (!repository) return;
-
-    const getInsights = async () => {
-      setLoading(true);
-      try {
-        const aiData = await fetchAIInsights(repository, languages, contributors, commitData);
-        setInsights(aiData);
-      } catch (err) {
-        console.error("Error fetching AI insights:", err);
-        setError("Failed to generate AI insights.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    getInsights();
-  }, [repository, languages, contributors, commitData]);
-
-  if (loading) {
-    return (
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle>AI-Generated Insights</CardTitle>
-        </CardHeader>
-        <CardContent className="h-72 flex items-center justify-center text-gray-500">
-          Generating insights…
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (error) {
-    return (
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle>AI-Generated Insights</CardTitle>
-        </CardHeader>
-        <CardContent className="h-72 flex flex-col items-center justify-center text-red-500 gap-2">
-          <p>{error}</p>
-          <Button onClick={() => setError(null)}>Retry</Button>
-        </CardContent>
-      </Card>
-    );
-  }
+  const renderSection = (title, content) => (
+    <div className="mb-6">
+      <h3 className="font-bold text-gray-900 dark:text-gray-100 text-lg mb-2">
+        {title}
+      </h3>
+      {content ? (
+        content
+          .split(/\n+/)
+          .filter(Boolean)
+          .map((paragraph, idx) => (
+            <p key={idx} className="mb-2 text-gray-700 dark:text-gray-300">
+              {paragraph.trim()}
+            </p>
+          ))
+      ) : (
+        <p className="text-gray-500 dark:text-gray-400">No information available.</p>
+      )}
+    </div>
+  );
 
   return (
-    <Card className="w-full">
+    <Card className="shadow-md rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 transition-colors mt-6">
       <CardHeader>
-        <CardTitle>AI-Generated Insights</CardTitle>
+        <CardTitle className="text-xl font-semibold text-gray-800 dark:text-gray-100">
+          AI-Powered Insights
+        </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div>
-          <h3 className="font-semibold">Repository Summary</h3>
-          <p>{insights.repoSummary}</p>
-        </div>
-        <div>
-          <h3 className="font-semibold">Language Analysis</h3>
-          <p>{insights.languageAnalysis}</p>
-        </div>
-        <div>
-          <h3 className="font-semibold">Contribution Patterns</h3>
-          <p>{insights.contributionPatterns}</p>
-        </div>
+      <CardContent>
+        {loading ? (
+          <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span>Analyzing repository...</span>
+          </div>
+        ) : error ? (
+          <div className="flex items-start gap-2 p-4 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300">
+            <AlertTriangle className="w-5 h-5 mt-0.5 shrink-0" />
+            <span>{error}</span>
+          </div>
+        ) : insights ? (
+          <>
+            {renderSection("AI Repository Summary", insights.summary)}
+            {renderSection("AI Language Analysis", insights.language)}
+            {renderSection("AI Contribution Patterns", insights.contribution)}
+          </>
+        ) : (
+          <button
+            onClick={fetchInsights}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all"
+          >
+            Generate Insights
+          </button>
+        )}
       </CardContent>
     </Card>
   );
-};
-
-export default AIInsights;
+}
